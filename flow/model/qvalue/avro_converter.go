@@ -169,6 +169,11 @@ func GetAvroSchemaFromQValueKind(kind QValueKind, targetDWH protos.DBType, preci
 			Type:  "array",
 			Items: "string",
 		}, nil
+	case QValueKindArrayUUID:
+		return AvroSchemaArray{
+			Type:  "array",
+			Items: "string",
+		}, nil
 	case QValueKindInvalid:
 		// lets attempt to do invalid as a string
 		return "string", nil
