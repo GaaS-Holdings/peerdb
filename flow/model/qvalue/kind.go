@@ -51,6 +51,7 @@ const (
 	QValueKindArrayTimestamp   QValueKind = "array_timestamp"
 	QValueKindArrayTimestampTZ QValueKind = "array_timestamptz"
 	QValueKindArrayBoolean     QValueKind = "array_bool"
+	QValueKindArrayUUID        QValueKind = "array_uuid"
 )
 
 func (kind QValueKind) IsArray() bool {
@@ -94,6 +95,7 @@ var QValueKindToSnowflakeTypeMap = map[QValueKind]string{
 	QValueKindArrayTimestamp:   "VARIANT",
 	QValueKindArrayTimestampTZ: "VARIANT",
 	QValueKindArrayBoolean:     "VARIANT",
+	QValueKindArrayUUID:        "VARIANT",
 }
 
 var QValueKindToClickhouseTypeMap = map[QValueKind]string{
@@ -126,6 +128,7 @@ var QValueKindToClickhouseTypeMap = map[QValueKind]string{
 	QValueKindArrayString:  "Array(String)",
 	QValueKindArrayBoolean: "Array(Bool)",
 	QValueKindArrayInt16:   "Array(Int16)",
+	QValueKindArrayUUID:    "Array(UUID)",
 }
 
 func (kind QValueKind) ToDWHColumnType(dwhType protos.DBType) (string, error) {

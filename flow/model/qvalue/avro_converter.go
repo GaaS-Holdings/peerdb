@@ -350,6 +350,8 @@ func QValueToAvro(value QValue, field *QField, targetDWH protos.DBType, logger l
 		return c.processArrayTime(v.Value().([]time.Time)), nil
 	case QValueArrayDate:
 		return c.processArrayDate(v.Val), nil
+	case QValueArrayUUID:
+		return c.processArrayUUID(v.Val), nil
 	case QValueUUID:
 		return c.processUUID(v.Val), nil
 	case QValueGeography, QValueGeometry, QValuePoint:
@@ -521,6 +523,19 @@ func (c *QValueAvroConverter) processArrayDate(arrayDate []time.Time) interface{
 	}
 
 	return transformedTimeArr
+}
+
+func (c *QValueAvroConverter) processArrayUUID(arrayUUID []uuid.UUID) interface{} {
+	transformedUUIDArr := make([]interface{}, 0, len(arrayUUID))
+	for _, t := range arrayUUID {
+		transformedUUIDArr = append(transformedUUIDArr, t.String())
+	}
+
+	if c.Nullable {
+		return goavro.Union("array", transformedUUIDArr)
+	}
+
+	return transformedUUIDArr
 }
 
 func (c *QValueAvroConverter) processHStore(hstore string) (interface{}, error) {

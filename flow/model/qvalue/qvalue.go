@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
-	"github.com/yuin/gopher-lua"
+	lua "github.com/yuin/gopher-lua"
 
 	"github.com/PeerDB-io/glua64"
 	"github.com/PeerDB-io/peer-flow/shared"
@@ -575,6 +575,24 @@ func (v QValueArrayString) Value() any {
 func (v QValueArrayString) LValue(ls *lua.LState) lua.LValue {
 	return shared.SliceToLTable(ls, v.Val, func(x string) lua.LValue {
 		return lua.LString(x)
+	})
+}
+
+type QValueArrayUUID struct {
+	Val []uuid.UUID
+}
+
+func (QValueArrayUUID) Kind() QValueKind {
+	return QValueKindArrayUUID
+}
+
+func (v QValueArrayUUID) Value() any {
+	return v.Val
+}
+
+func (v QValueArrayUUID) LValue(ls *lua.LState) lua.LValue {
+	return shared.SliceToLTable(ls, v.Val, func(x uuid.UUID) lua.LValue {
+		return lua.LString(x.String())
 	})
 }
 

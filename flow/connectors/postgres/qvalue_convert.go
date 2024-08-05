@@ -102,10 +102,12 @@ func (c *PostgresConnector) postgresOIDToQValueKind(recvOID uint32) qvalue.QValu
 		return qvalue.QValueKindArrayTimestamp
 	case pgtype.TimestamptzArrayOID:
 		return qvalue.QValueKindArrayTimestampTZ
-	case pgtype.TextArrayOID, pgtype.VarcharArrayOID, pgtype.BPCharArrayOID, pgtype.UUIDArrayOID:
+	case pgtype.TextArrayOID, pgtype.VarcharArrayOID, pgtype.BPCharArrayOID:
 		return qvalue.QValueKindArrayString
 	case pgtype.IntervalOID:
 		return qvalue.QValueKindInterval
+	case pgtype.UUIDArrayOID:
+		return qvalue.QValueKindArrayUUID
 	default:
 		typeName, ok := pgtype.NewMap().TypeForOID(recvOID)
 		if !ok {
@@ -203,6 +205,8 @@ func qValueKindToPostgresType(colTypeStr string) string {
 		return "BOOLEAN[]"
 	case qvalue.QValueKindArrayString:
 		return "TEXT[]"
+	case qvalue.QValueKindArrayUUID:
+		return "UUID[]"
 	case qvalue.QValueKindGeography:
 		return "GEOGRAPHY"
 	case qvalue.QValueKindGeometry:
@@ -439,6 +443,12 @@ func parseFieldFromQValueKind(qvalueKind qvalue.QValueKind, value interface{}) (
 			return nil, err
 		}
 		return qvalue.QValueArrayString{Val: a}, nil
+	case qvalue.QValueKindArrayUUID:
+		a, err := convertToArray[uuid.UUID](qvalueKind, value)
+		if err != nil {
+			return nil, err
+		}
+		return qvalue.QValueArrayUUID{Val: a}, nil
 	case qvalue.QValueKindPoint:
 		coord := value.(pgtype.Point).P
 		return qvalue.QValuePoint{
