@@ -102,7 +102,7 @@ func (c *PostgresConnector) postgresOIDToQValueKind(recvOID uint32) qvalue.QValu
 		return qvalue.QValueKindArrayTimestamp
 	case pgtype.TimestamptzArrayOID:
 		return qvalue.QValueKindArrayTimestampTZ
-	case pgtype.TextArrayOID, pgtype.VarcharArrayOID, pgtype.BPCharArrayOID:
+	case pgtype.TextArrayOID, pgtype.VarcharArrayOID, pgtype.BPCharArrayOID, pgtype.UUIDArrayOID:
 		return qvalue.QValueKindArrayString
 	case pgtype.IntervalOID:
 		return qvalue.QValueKindInterval

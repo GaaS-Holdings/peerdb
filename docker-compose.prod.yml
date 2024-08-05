@@ -1,0 +1,140 @@
+name: peerdb-quickstart
+
+x-catalog-config: &catalog-config
+  env_file: .env
+
+x-flow-worker-env: &flow-worker-env
+  TEMPORAL_HOST_PORT: temporal:7233
+  TEMPORAL_CLIENT_CERT:
+  TEMPORAL_CLIENT_KEY:
+  PEERDB_TEMPORAL_NAMESPACE: default
+
+services:
+  temporal:
+    container_name: temporal
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DB=postgres12
+      - DB_PORT=${PEERDB_CATALOG_PORT}
+      - POSTGRES_USER=${PEERDB_CATALOG_USER}
+      - POSTGRES_PWD=${PEERDB_CATALOG_PASSWORD}
+      - POSTGRES_SEEDS=${PEERDB_CATALOG_HOST}
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+    image: temporalio/auto-setup:1.22
+    ports:
+      - 7233:7233
+    volumes:
+      - ./volumes/temporal-dynamicconfig:/etc/temporal/config/dynamicconfig
+    labels:
+      kompose.volume.type: configMap
+
+  temporal-admin-tools:
+    container_name: temporal-admin-tools
+    restart: unless-stopped
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_ADDRESS=temporal:7233
+      - TEMPORAL_CLI_SHOW_STACKS=1
+    image: temporalio/admin-tools:1.22
+    stdin_open: true
+    tty: true
+    entrypoint: /etc/temporal/entrypoint.sh
+    healthcheck:
+      test: ["CMD", "tctl", "workflow", "list"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - ./scripts/mirror-name-search.sh:/etc/temporal/entrypoint.sh
+
+  temporal-ui:
+    container_name: temporal-ui
+    restart: unless-stopped
+    depends_on:
+      - temporal
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+      - TEMPORAL_CSRF_COOKIE_INSECURE=true
+    image: temporalio/ui:2.21.3
+    ports:
+      - 8085:8080
+
+  flow-api:
+    container_name: flow_api
+    image: ghcr.io/peerdb-io/flow-api:latest-dev
+    restart: unless-stopped
+    ports:
+      - 8112:8112
+      - 8113:8113
+    env_file: .env
+    environment:
+      <<: [*flow-worker-env]
+    depends_on:
+      temporal-admin-tools:
+        condition: service_healthy
+
+  flow-snapshot-worker:
+    container_name: flow-snapshot-worker
+    build:
+      context: .
+      dockerfile: stacks/flow.Dockerfile
+      target: flow-snapshot-worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      <<: [*flow-worker-env]
+    depends_on:
+      temporal-admin-tools:
+        condition: service_healthy
+
+  flow-worker:
+    container_name: flow-worker
+    build:
+      context: .
+      dockerfile: stacks/flow.Dockerfile
+      target: flow-worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      <<: [*flow-worker-env]
+    depends_on:
+      temporal-admin-tools:
+        condition: service_healthy
+
+  peerdb:
+    container_name: peerdb-server
+    stop_signal: SIGINT
+    image: ghcr.io/peerdb-io/peerdb-server:latest-dev
+    restart: unless-stopped
+    environment:
+      <<: *catalog-config
+      PEERDB_PASSWORD: peerdb
+      PEERDB_FLOW_SERVER_ADDRESS: grpc://flow_api:8112
+      RUST_LOG: info
+      RUST_BACKTRACE: 1
+    ports:
+      - 9900:9900
+
+  peerdb-ui:
+    container_name: peerdb-ui
+    image: ghcr.io/peerdb-io/peerdb-ui:latest-dev
+    restart: unless-stopped
+    ports:
+      - 3000:3000
+    env_file: .env
+    environment:
+      <<: *catalog-config
+      DATABASE_URL: postgres://${PEERDB_CATALOG_USER}:${PEERDB_CATALOG_PASSWORD}@${PEERDB_CATALOG_HOST}:${PEERDB_CATALOG_PORT}/postgres
+      PEERDB_FLOW_SERVER_HTTP: http://flow_api:8113
+      NEXTAUTH_SECRET: __changeme__
+      NEXTAUTH_URL: http://localhost:3000
+    depends_on:
+      - flow-api
+
+networks:
+  default:
+    name: peerdb_network
