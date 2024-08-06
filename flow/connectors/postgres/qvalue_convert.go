@@ -444,7 +444,7 @@ func parseFieldFromQValueKind(qvalueKind qvalue.QValueKind, value interface{}) (
 		}
 		return qvalue.QValueArrayString{Val: a}, nil
 	case qvalue.QValueKindArrayUUID:
-		a, err := convertToArray[uuid.UUID](qvalueKind, value)
+		a, err := convertToArray[[16]byte](qvalueKind, value)
 		if err != nil {
 			return nil, err
 		}
