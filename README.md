@@ -74,3 +74,14 @@ We support multiple target connectors to move data from Postgres and a couple of
 ## License
 
 PeerDB is licensed under Elastic License 2.0 (ELv2). Please see the LICENSE file for additional information. If you have any licensing questions please email **<contact@peerdb.io>**
+
+## Archive Changes
+Array of UUIDs synchronization is not working out of the box, so it has been added in this fork.
+
+Deployment process:
+- clone repo
+- `git checkout fix/array-of-uuids`
+- `./generate_protos.sh`
+- `docker compose -f docker-compose.prod.yml build`
+- `cp .env.example .env` and modify env variables according to 1password
+- `docker compose -f docker-compose.prod.yml up`
