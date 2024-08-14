@@ -579,7 +579,7 @@ func (v QValueArrayString) LValue(ls *lua.LState) lua.LValue {
 }
 
 type QValueArrayUUID struct {
-	Val [][16]byte
+	Val []string
 }
 
 func (QValueArrayUUID) Kind() QValueKind {
@@ -591,8 +591,8 @@ func (v QValueArrayUUID) Value() any {
 }
 
 func (v QValueArrayUUID) LValue(ls *lua.LState) lua.LValue {
-	return shared.SliceToLTable(ls, v.Val, func(x [16]byte) lua.LValue {
-		return shared.LuaUuid.New(ls, uuid.UUID(x))
+	return shared.SliceToLTable(ls, v.Val, func(x string) lua.LValue {
+		return lua.LString(x)
 	})
 }
 

@@ -530,10 +530,10 @@ func (c *QValueAvroConverter) processArrayDate(arrayDate []time.Time) interface{
 	return transformedTimeArr
 }
 
-func (c *QValueAvroConverter) processArrayUUID(arrayUUID [][16]byte) interface{} {
+func (c *QValueAvroConverter) processArrayUUID(arrayUUID []string) interface{} {
 	transformedUUIDArr := make([]interface{}, 0, len(arrayUUID))
 	for _, t := range arrayUUID {
-		transformedUUIDArr = append(transformedUUIDArr, uuid.UUID(t).String())
+		transformedUUIDArr = append(transformedUUIDArr, t)
 	}
 
 	if c.Nullable {

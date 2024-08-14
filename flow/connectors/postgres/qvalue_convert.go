@@ -444,11 +444,44 @@ func parseFieldFromQValueKind(qvalueKind qvalue.QValueKind, value interface{}) (
 		}
 		return qvalue.QValueArrayString{Val: a}, nil
 	case qvalue.QValueKindArrayUUID:
-		a, err := convertToArray[[16]byte](qvalueKind, value)
-		if err != nil {
-			return nil, err
+		switch v := value.(type) {
+		case [][16]byte:
+			a, err := convertToArray[string](qvalueKind, v)
+			if err != nil {
+				return nil, err
+			}
+			return qvalue.QValueArrayUUID{Val: a}, nil
+		case []interface{}:
+			transformedArray := make([]string, len(v))
+
+			for i := range v {
+				switch item := v[i].(type) {
+				case [16]byte:
+					uuidValue := uuid.UUID(item)
+					transformedArray[i] = uuidValue.String()
+				case string:
+					transformedArray[i] = item
+				case pgtype.UUID:
+					uuidValue, err := item.Value()
+					if err != nil {
+						return nil, fmt.Errorf("failed to parse UUID: %w", err)
+					}
+
+					if uuidValue, ok := uuidValue.(string); ok {
+						transformedArray[i] = uuidValue
+					} else {
+						return nil, fmt.Errorf("failed to parse UUID to string: %w", err)
+					}
+
+				default:
+					return nil, fmt.Errorf("failed to parse item of UUID[]: %v, type: %T", item, item)
+				}
+			}
+
+			return qvalue.QValueArrayUUID{Val: transformedArray}, nil
+		default:
+			return nil, fmt.Errorf("failed to parse UUID[]: %v, %T", value, value)
 		}
-		return qvalue.QValueArrayUUID{Val: a}, nil
 	case qvalue.QValueKindPoint:
 		coord := value.(pgtype.Point).P
 		return qvalue.QValuePoint{
