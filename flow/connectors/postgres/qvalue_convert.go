@@ -445,12 +445,6 @@ func parseFieldFromQValueKind(qvalueKind qvalue.QValueKind, value interface{}) (
 		return qvalue.QValueArrayString{Val: a}, nil
 	case qvalue.QValueKindArrayUUID:
 		switch v := value.(type) {
-		case [][16]byte:
-			a, err := convertToArray[string](qvalueKind, v)
-			if err != nil {
-				return nil, err
-			}
-			return qvalue.QValueArrayUUID{Val: a}, nil
 		case []interface{}:
 			transformedArray := make([]string, len(v))
 
