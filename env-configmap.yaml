@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  AWS_ACCESS_KEY_ID: key_id
+  AWS_REGION: us-east-2
+  AWS_SECRET_ACCESS_KEY: secret_key
+  PEERDB_CATALOG_DATABASE: postgres
+  PEERDB_CATALOG_HOST: host.url
+  PEERDB_CATALOG_PASSWORD: postgres_password
+  PEERDB_CATALOG_PORT: "5432"
+  PEERDB_CATALOG_USER: postgres
+kind: ConfigMap
+metadata:
+  labels:
+    io.kompose.service: flow-api-env
+  name: env
