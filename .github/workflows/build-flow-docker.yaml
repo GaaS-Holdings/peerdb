@@ -2,7 +2,7 @@ name: Build Flow Docker Image
 
 on:
   push:
-    branches: [fix/array-of-uuids]
+    branches: [skip_nils]
 
 permissions:
   packages: write
