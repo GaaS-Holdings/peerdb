@@ -1,0 +1,71 @@
+name: Build Flow Docker Image
+
+on:
+  push:
+    branches: [fix/array-of-uuids]
+
+permissions:
+  packages: write
+  contents: read
+  id-token: write
+  attestations: write
+
+env:
+  REGISTRY: ghcr.io
+  REPO_OWNER: gaas-holdings
+  REPO_NAME: archive-peerdb-flow
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: generate or hydrate protos
+        uses: ./.github/actions/genprotos
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get git branch for docker tag
+        id: docker-tag
+        shell: bash
+        # Dropping prefix from refs/heads/staging -> staging
+        run: |
+            echo "tag=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+
+      - name: Build and push flow-worker Docker image
+        id: push-worker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          file: stacks/flow.Dockerfile
+          target: flow-worker
+          tags: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}:flow-worker-${{ steps.docker-tag.outputs.tag }}
+
+      - name: Build and push flow-snapshot Docker image
+        id: push-snapshot
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          file: stacks/flow.Dockerfile
+          target: flow-snapshot-worker
+          tags: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}:flow-snapshot-${{ steps.docker-tag.outputs.tag }}
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}
+          subject-digest: ${{ steps.push-worker.outputs.digest }}
+          push-to-registry: true
+
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.REPO_OWNER }}/${{ env.REPO_NAME }}
+          subject-digest: ${{ steps.push-snapshot.outputs.digest }}
+          push-to-registry: true
