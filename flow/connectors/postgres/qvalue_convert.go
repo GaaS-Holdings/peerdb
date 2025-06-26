@@ -276,6 +276,9 @@ func parseUUIDArray(value interface{}) (qvalue.QValue, error) {
 	case []interface{}:
 		uuids := make([]uuid.UUID, 0, len(v))
 		for _, v := range v {
+			if v == nil {
+				continue
+			}
 			id, err := parseUUID(v)
 			if err != nil {
 				return nil, fmt.Errorf("invalid UUID interface{} value in array: %w", err)
